@@ -58,7 +58,7 @@ main:
 	
 	lb $t1, AlphabetU($a0) # get random letter of alphabet
 	sb $t1, Letters($t0) # insert into letters
-	bgt $t0, 0, letter_loop # loop while $t0 >= 0
+	bgt $t0, 0, letter_loop # loop while $t0 > 0
 	
 	show_letters:
 	# inform user of chosen letters
