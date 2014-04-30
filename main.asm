@@ -1,15 +1,18 @@
+# This file, main.asm, contains the main procedure.
+
 .data
-DictFile:   .asciiz "dictionary.txt"
 Welcome:    .asciiz "Welcome to Jumbline: MIPS Edition!\n\n"
 CharPrompt: .asciiz "Do you want to play with 5, 6, or 7 letters?\n"
 InvalidNum: .asciiz "You must enter either 5, 6, or 7 - try again.\n"
 RandID:     .word 0 # MARS allows multiple independent RNGs identified by ID
 AlphabetU:  .asciiz "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 AlphabetL:  .asciiz "abcdefghijklmnopqrstuvwxyz"
-Letters:    .space 8 # At most 7 letters plus null
+Letters:    .space 8 # at most 7 letters plus null
 LetterInfo: .asciiz "Your letters are: "
 Newline:    .asciiz "\n"
-Guess:      .space 8 # Longest word is 7 letters, plus null
+Guess:      .space 8 # longest word is 7 letters, plus null
+
+.globl main
 
 .text
 main:
@@ -23,14 +26,14 @@ main:
 	li $v0, 4 # print string
 	la $a0, CharPrompt
 	syscall
-	
+
 	j get_num_letters
-	
+
 	get_num_letters_again:
 	li $v0, 4 # print string
 	la $a0, InvalidNum
 	syscall
-		
+
 	get_num_letters:
 	# get number of letters
 	li $v0, 5 # read integer
@@ -38,7 +41,7 @@ main:
 	blt $v0, 5, get_num_letters_again
 	bgt $v0, 7, get_num_letters_again
 	move $s0, $v0
-	
+
 	# seed random generator from system time
 	li $v0, 30 # get system time
 	syscall # time in $a0, $a1
@@ -46,7 +49,7 @@ main:
 	lw $a0, RandID
 	li $v0, 40 # set seed
 	syscall
-	
+
 	move $t0, $s0
 	sb $zero, Letters($t0) # add null terminator
 	letter_loop:
@@ -55,12 +58,25 @@ main:
 	lw $a0, RandID
 	li $a1, 25 # alphabet 0-25
 	syscall # $a0 is random int in [0, 25]
-	
+
 	lb $t1, AlphabetU($a0) # get random letter of alphabet
 	sb $t1, Letters($t0) # insert into letters
-	bgt $t0, 0, letter_loop # loop while $t0 > 0
-	
-	show_letters:
+	bgtz $t0, letter_loop # loop while $t0 > 0
+
+	# call show_letters procedure
+	jal show_letters
+
+	# Temporary test: see if shuffle procedure works
+	la $a0, Letters # first argument: address of range to shuffle
+	move $a1, $s0 # second argument: length of range to shuffle
+	jal shuffle # call shuffle procedure
+	jal show_letters # see the new arrangement of letters
+
+	# end of main
+	li $v0, 10 # exit program
+	syscall
+
+show_letters: # internal procedure
 	# inform user of chosen letters
 	li $v0, 4 # print string
 	la $a0, LetterInfo
@@ -69,5 +85,4 @@ main:
 	syscall
 	la $a0, Newline
 	syscall
-	
-	# ...work in progress...
+	jr $ra # return to calling code

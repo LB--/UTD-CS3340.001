@@ -10,9 +10,10 @@ public class DictScript
 		while(in.hasNext())
 		{
 			String word = in.next();
-			if(word.length() <= 7)
+			if(word.length() <= 7 && word.length() >= 3)
 			{
-				out.println(word);
+				out.print(word.toUpperCase());
+				out.append('\n'); //don't use \r\n on Windows
 			}
 		}
 		out.close();

@@ -1,0 +1,2 @@
+# force dictionary file to be treated as binary to preserve line endings
+dictionary.txt binary
