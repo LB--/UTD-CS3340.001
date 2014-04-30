@@ -9,6 +9,7 @@
 
 .data
 DictFile:  .asciiz "dictionary.txt"
+FileError: .asciiz "!!! Error opening dictionary.txt !!!"
 Word:      .space 8 # at most 7 characters plus null
 LetterUse: .space 8 # used to track which letters have been used
 Newline:   .ascii "\n"
@@ -32,8 +33,11 @@ parse_dictionary:
 	move $a2, $zero # mode (ignored)
 	syscall # $v0 contains the file descriptor
 	move $s2, $v0
-	bne $s2, -1, after_open_file # done, opened successfully
+	bgez $s2, after_open_file # done, opened successfully
 	# error - exit program
+	li $v0, 4 # print string
+	la $a0, FileError
+	syscall
 	li $v0, 17 # exit2
 	li $a0, -1 # exit code
 	syscall
@@ -57,10 +61,43 @@ parse_dictionary:
 		bne $t3, $t2, read_loop # if not newline, keep looping
 		after_read_loop:
 	sb $zero, -1($t0)
+
 	# check if the word uses only the letters given
-	la $t0, Word
-	move $t2, $s0 # the letters
-	# ...work in progress...
+	# first, clear the letter use flags
+	la $t0, LetterUse
+	sb $zero, 0($t0)
+	sb $zero, 1($t0)
+	sb $zero, 2($t0)
+	sb $zero, 3($t0)
+	sb $zero, 4($t0)
+	sb $zero, 5($t0)
+	sb $zero, 6($t0)
+	sb $zero, 7($t0)
+	la $t0, Word # get address of word
+	# loop through the word
+		check_loop:
+		lb $t1, ($t0) # get current letter from word
+		beqz $t1, after_check_loop # stop at end of word
+		move $t2, $zero # loop index
+		# loop through the usable characters
+			use_loop:
+			add $t3, $s0, $t2 # get current letter address
+			lb $t3, ($t3) # get current letter
+			add $t2, $t2, 1 # ++$t2
+			beqz $t3, word_loop # stop after all letters
+			bne $t3, $t1, use_loop # letters don't match, try next
+			lb $t4, LetterUse($t2) # get current use flag
+			bnez $t4, word_loop # can't use this word
+			li $t4, 1 # set use flag
+			sb $t4, LetterUse($t2) # this letter is used
+			after_use_loop:
+		add $t0, $t0, 1 # ++$t0
+		j check_loop
+		after_check_loop:
+	# word is acceptable, invoke callback
+	la $a0, Word # argument to callback
+	jalr $s1 # invoke callback
+	j word_loop
 	after_word_loop:
 
 	# close the file

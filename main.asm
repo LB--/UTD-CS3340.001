@@ -4,6 +4,9 @@
 Welcome:    .asciiz "Welcome to Jumbline: MIPS Edition!\n\n"
 CharPrompt: .asciiz "Do you want to play with 5, 6, or 7 letters?\n"
 InvalidNum: .asciiz "You must enter either 5, 6, or 7 - try again.\n"
+DictStart:  .asciiz "Identifying dictionary words...\n"
+DictFound:  .asciiz "Dictionary words found.\n"
+DictNone:   .asciiz "No dictionary words for these letters\n"
 RandID:     .word 0 # MARS allows multiple independent RNGs identified by ID
 AlphabetU:  .asciiz "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 AlphabetL:  .asciiz "abcdefghijklmnopqrstuvwxyz"
@@ -66,14 +69,19 @@ main:
 	# call show_letters procedure
 	jal show_letters
 
-	# Temporary test: see if shuffle procedure works
+	# Get dictionary words
+	li $v0, 4 # print string
+	la $a0, DictStart
+	syscall
 	la $a0, Letters # first argument: address of range to shuffle
-	move $a1, $s0 # second argument: length of range to shuffle
-	jal shuffle # call shuffle procedure
-	jal show_letters # see the new arrangement of letters
+	la $a1, on_word # second argument: valid word callback
+	jal parse_dictionary # call dictionary parsing procedure
+	li $v0, 4 # print string
+	la $a0, DictFound
+	syscall
 
-	# end of main
-	li $v0, 10 # exit program
+	# end of main - exit game program
+	li $v0, 10 # exit
 	syscall
 
 show_letters: # internal procedure
@@ -86,3 +94,21 @@ show_letters: # internal procedure
 	la $a0, Newline
 	syscall
 	jr $ra # return to calling code
+
+on_word: # callback procedure for parse_dictionary
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	jal save_to_stack
+
+	# should store the word in a data structure somewhere
+	# for testing, just prints the word
+	li $v0, 4 # print string
+	# $a0 already has word in it
+	syscall
+	la $a0, Newline
+	syscall
+
+	jal restore_from_stack
+	lw $ra, ($sp)
+	subi $sp, $sp, -4
+	jr $ra
