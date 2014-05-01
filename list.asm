@@ -1,16 +1,18 @@
-# This file, list.asm, holds procedures for dealing with linked lists.
-# All procedure names start with ll, as in Linked List.
+# This file, list.asm, holds procedures for dealing with singly linked lists.
 
 .data
+# songly-linked-list memory layout:
+# pointer to user data
+# pointer to next node
 
-.globl ll_new
-.globl ll_add
-.globl ll_get
-.globl ll_remove
-.globl ll_size
+.globl list_new
+.globl list_add
+.globl list_get
+.globl list_remove
+.globl list_size
 
 .text
-ll_new:
+list_new:
 	addi $sp, $sp, -4
 	sw $ra, ($sp)
 	jal save_to_stack
@@ -22,7 +24,7 @@ ll_new:
 	subi $sp, $sp, -4
 	jr $ra
 
-ll_add:
+list_add:
 	addi $sp, $sp, -4
 	sw $ra, ($sp)
 	jal save_to_stack
@@ -34,7 +36,7 @@ ll_add:
 	subi $sp, $sp, -4
 	jr $ra
 
-ll_get:
+list_get:
 	addi $sp, $sp, -4
 	sw $ra, ($sp)
 	jal save_to_stack
@@ -46,7 +48,7 @@ ll_get:
 	subi $sp, $sp, -4
 	jr $ra
 
-ll_remove:
+list_remove:
 	addi $sp, $sp, -4
 	sw $ra, ($sp)
 	jal save_to_stack
@@ -58,7 +60,7 @@ ll_remove:
 	subi $sp, $sp, -4
 	jr $ra
 
-ll_size:
+list_size:
 	addi $sp, $sp, -4
 	sw $ra, ($sp)
 	jal save_to_stack
