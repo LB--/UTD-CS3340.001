@@ -20,6 +20,8 @@ GoodGuessA: .asciiz "Yep, that's a word! You get "
 GoodGuessB: .asciiz " points.\n"
 AlphabetU:  .asciiz "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 RandID:     .word 0 # MARS allows multiple independent RNGs identified by ID
+HasWords:   .word 0 # boolean: more than 0 words?
+DictFail:   .word 0 # number of times dictionary failed
 Score:      .word 0 # player's score
 Letters:    .space 8 # at most 7 letters plus null
 Guess:      .space 8 # longest word is 7 letters, plus null
@@ -68,6 +70,11 @@ main:
 	li $v0, 40 # set seed
 	syscall
 
+	li $v0, 4 # print string
+	la $a0, DictStart
+	syscall
+
+	generate_letters:
 	move $t0, $s0
 	sb $zero, Letters($t0) # add null terminator
 	letter_loop:
@@ -82,12 +89,18 @@ main:
 	bgtz $t0, letter_loop # loop while $t0 > 0
 
 	# Get dictionary words
-	li $v0, 4 # print string
-	la $a0, DictStart
-	syscall
 	la $a0, Letters # first argument: address of letters
 	la $a1, on_word # second argument: valid word callback
 	jal parse_dictionary # call dictionary parsing procedure
+
+	# retry if no words found, give up after 100 tries
+	lw $t0, DictFail
+	addi $t0, $t0, 1
+	beq $t0, 100, end_main
+	sw $t0, DictFail
+	lw $t0, HasWords
+	beqz $t0, generate_letters
+
 	li $v0, 4 # print string
 	la $a0, DictFound
 	syscall
@@ -187,6 +200,7 @@ main:
 	jal show_wordcounts
 	j user_choice
 
+	end_main:
 	# end of main - exit game program
 	li $v0, 10 # exit
 	syscall
@@ -274,6 +288,9 @@ on_word: # callback procedure for parse_dictionary
 	move $s0, $v0 # length of string
 	jal string_copy_to_heap
 	move $s1, $v0 # address of string
+
+	li $t0, 1 # more than 0 words
+	sw $t0, HasWords
 
 	# calculate which list to use
 	beq $s0, 3, len3

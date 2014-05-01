@@ -90,7 +90,7 @@ list_remove_if:
 	jalr $s1
 	beqz $v0, keep_removing # not found if return is 0
 	# ...work in progres...
-	j remove_loop
+#	j remove_loop
 	keep_removing:
 	addi $s3, $s4, 4 # address of new pointer
 	lw $s4 ($s3) # pointer to node
