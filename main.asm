@@ -69,6 +69,17 @@ main:
 	# call show_letters procedure
 	jal show_letters
 
+	# for testing purposes - play sound
+	li $a0, 1 # correct
+	jal play_sound
+
+	li $v0, 32 # sleep
+	li $a0, 1000 # 1 second
+	syscall
+
+	li $a0, 0 # incorrect
+	jal play_sound
+
 	# Get dictionary words
 	li $v0, 4 # print string
 	la $a0, DictStart
