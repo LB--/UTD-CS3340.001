@@ -79,7 +79,23 @@ list_remove_if:
 	sw $ra, ($sp)
 	jal save_to_stack
 
-	# ... work in progress...
+	move $s0, $a0 # address of pointer to root node
+	move $s1, $a1 # callback accepting $a0 as user data from node
+
+	move $s3, $s0 # address of pointer to node
+	lw $s4, ($s3) # pointer to node
+	remove_loop:
+	beqz $s4, after_remove_loop # if null, done searching
+	lw $a0, ($s4) # load user data
+	jalr $s1
+	beqz $v0, keep_removing # not found if return is 0
+	# ...work in progres...
+	j remove_loop
+	keep_removing:
+	addi $s3, $s4, 4 # address of new pointer
+	lw $s4 ($s3) # pointer to node
+	j remove_loop
+	after_remove_loop:
 
 	jal restore_from_stack
 	lw $ra, ($sp)

@@ -1,7 +1,7 @@
 # This file, main.asm, contains the main procedure.
 
 .data
-Welcome:    .asciiz "Welcome to Jumbline: MIPS Edition!\n\n"
+Welcome:    .asciiz "\n\n\nWelcome to Jumbline: MIPS Edition!\n\n"
 CharPrompt: .asciiz "Do you want to play with 5, 6, or 7 letters?\n"
 InvalidNum: .asciiz "You must enter either 5, 6, or 7 - try again.\n"
 LetterInfo: .asciiz "Your letters are: "
@@ -129,6 +129,7 @@ main:
 	jal string_uppercase # convert string to uppercase in-place
 	jal string_trim_end # trim end of string in-place
 	jal string_length # $v0 is length of string
+	move $s0, $v0
 	beq $v0, 3, g3
 	beq $v0, 4, g4
 	beq $v0, 5, g5
@@ -153,6 +154,7 @@ main:
 	after_g:
 	la $a1, if_guess_matches
 	jal list_find_if # $v0 is boolean for if match found
+	move $s1, $a0
 	move $a0, $v0
 	jal play_sound
 	bnez $a0, good_guess
@@ -165,7 +167,20 @@ main:
 	after_bad_guess:
 
 	good_guess:
-	# ...work in progres...
+	move $a0, $s1
+	jal list_remove_if
+	li $v0, 4 # print string
+	la $a0, GoodGuessA
+	syscall
+	li $v0, 1 # print integer
+	move $a0, $s0
+	syscall
+	li $v0, 4 # print string
+	la $a0, GoodGuessB
+	syscall
+	lw $t0, Score
+	add $t0, $t0, $s0
+	sw $t0, Score
 	after_good_guess:
 
 	jal show_letters
