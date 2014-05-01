@@ -6,11 +6,15 @@ CharPrompt: .asciiz "Do you want to play with 5, 6, or 7 letters?\n"
 InvalidNum: .asciiz "You must enter either 5, 6, or 7 - try again.\n"
 LetterInfo: .asciiz "Your letters are: "
 Newline:    .asciiz "\n"
-DictStart:  .asciiz "Identifying dictionary words...\n"
-DictFound:  .asciiz "Dictionary words found.\n"
+DictStart:  .asciiz "Identifying dictionary words"
+DictFind:   .asciiz "."
+DictFound:  .asciiz "\nDictionary words found.\n"
 DictNone:   .asciiz "No dictionary words for these letters\n"
 Prompt:     .asciiz "What do you want to do? 1 = rearrange letters, 2 = guess a word\n"
 Reprompt:   .asciiz "Invalid option, 1 = rearrange letters, 2 = guess a word\n"
+WordsA:     .asciiz "There are "
+WordsB:     .asciiz " words of length "
+ScoreIs:    .asciiz "Your score is currently "
 AlphabetU:  .asciiz "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 RandID:     .word 0 # MARS allows multiple independent RNGs identified by ID
 Score:      .word 0 # player's score
@@ -27,18 +31,6 @@ Words7L:    .word 0 # null
 
 .text
 main:
-	# initialize word lists
-	la $a0, Words3L
-	jal list_new
-	la $a0, Words4L
-	jal list_new
-	la $a0, Words5L
-	jal list_new
-	la $a0, Words6L
-	jal list_new
-	la $a0, Words7L
-	jal list_new
-
 	# display welcome message
 	li $v0, 4 # print string
 	la $a0, Welcome
@@ -98,6 +90,7 @@ main:
 	syscall
 
 	jal show_letters
+	jal show_wordcounts
 
 	# ask user what they want to do
 	user_choice:
@@ -132,6 +125,7 @@ main:
 	syscall
 	# ...work in progress...
 	jal show_letters
+	jal show_wordcounts
 	j user_choice
 
 	# end of main - exit game program
@@ -149,6 +143,68 @@ show_letters: # internal procedure
 	syscall
 	jr $ra # return to calling code
 
+show_wordcounts: # informs user of number of words of each length
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	jal save_to_stack
+
+	la $a0, Words3L
+	li $s1, 3
+	jal do_show
+	la $a0, Words4L
+	li $s1, 4
+	jal do_show
+	la $a0, Words5L
+	li $s1, 5
+	jal do_show
+	la $a0, Words6L
+	li $s1, 6
+	jal do_show
+	la $a0, Words7L
+	li $s1, 7
+	jal do_show
+
+	j after_do_show
+	do_show:
+	move $s0, $ra
+	jal list_size
+	move $s2, $v0
+	bnez $s2, print_string
+	jr $s0
+	print_string:
+	li $v0, 4 # print string
+	la $a0, WordsA
+	syscall
+	li $v0, 1 # print integer
+	move $a0, $s2
+	syscall
+	li $v0, 4 # print string
+	la $a0, WordsB
+	syscall
+	li $v0, 1 # print integer
+	move $a0, $s1
+	syscall
+	li $v0, 4 # print string
+	la $a0, Newline
+	syscall
+	jr $s0
+	after_do_show:
+
+	li $v0, 4 # print string
+	la $a0, ScoreIs
+	syscall
+	li $v0, 1, # print integer
+	lw $a0, Score
+	syscall
+	li $v0, 4 # print string
+	la $a0, Newline
+	syscall
+
+	jal restore_from_stack
+	lw $ra, ($sp)
+	subi $sp, $sp, -4
+	jr $ra
+
 on_word: # callback procedure for parse_dictionary
 	addi $sp, $sp, -4
 	sw $ra, ($sp)
@@ -160,7 +216,36 @@ on_word: # callback procedure for parse_dictionary
 	jal string_copy_to_heap
 	move $s1, $v0 # address of string
 
-	#
+	# calculate which list to use
+	beq $s0, 3, len3
+	beq $s0, 4, len4
+	beq $s0, 5, len5
+	beq $s0, 6, len6
+	beq $s0, 7, len7
+	li $a0, 0 # should never reach this line
+	j after_len
+	len3:
+	la $a0, Words3L
+	j after_len
+	len4:
+	la $a0, Words4L
+	j after_len
+	len5:
+	la $a0, Words5L
+	j after_len
+	len6:
+	la $a0, Words6L
+	j after_len
+	len7:
+	la $a0, Words7L
+	j after_len
+	after_len:
+	move $a1, $s1 # list node data
+	jal list_add
+
+	li $v0, 4 # print string
+	la $a0, DictFind
+	syscall
 
 	jal restore_from_stack
 	lw $ra, ($sp)

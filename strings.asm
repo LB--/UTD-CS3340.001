@@ -40,7 +40,7 @@ string_copy_to_heap: # copy given string to new place in heap
 	jal string_length
 	move $s1, $v0 # length of string
 
-	li $v0, 6 # allocate heap memory
+	li $v0, 9 # allocate heap memory
 	addi $a0, $s1, 1 # include room for null
 	syscall # $v0 contains address, will leave alone as return value
 
