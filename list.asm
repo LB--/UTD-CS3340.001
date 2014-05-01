@@ -83,13 +83,15 @@ list_remove_if:
 	move $s1, $a1 # callback accepting $a0 as user data from node
 
 	move $s3, $s0 # address of pointer to node
-	lw $s4, ($s3) # pointer to node
 	remove_loop:
+	lw $s4, ($s3) # pointer to node
 	beqz $s4, after_remove_loop # if null, done searching
 	lw $a0, ($s4) # load user data
 	jalr $s1
 	beqz $v0, keep_removing # not found if return is 0
-	# ...work in progres...
+	addi $s2, $s4, 4 # address of new pointer
+	lw $s2, ($s2) # pointer to node
+	sw $s2, ($s3) # skip current node
 #	j remove_loop
 	keep_removing:
 	addi $s3, $s4, 4 # address of new pointer
