@@ -15,6 +15,9 @@ Reprompt:   .asciiz "Invalid option, 1 = rearrange letters, 2 = guess a word\n"
 WordsA:     .asciiz "There are "
 WordsB:     .asciiz " words of length "
 ScoreIs:    .asciiz "Your score is currently "
+BadGuess:   .asciiz "Sorry, that's not one of the words! Try again.\n"
+GoodGuessA: .asciiz "Yep, that's a word! You get "
+GoodGuessB: .asciiz " points.\n"
 AlphabetU:  .asciiz "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 RandID:     .word 0 # MARS allows multiple independent RNGs identified by ID
 Score:      .word 0 # player's score
@@ -122,8 +125,49 @@ main:
 	li $v0, 8 # read string
 	la $a0, Guess # address of input buffer
 	li $a1, 8 # size of buffer (will null pad)
+	syscall # write to address pointed by $a0 in-place
+	jal string_uppercase # convert string to uppercase in-place
+	jal string_trim_end # trim end of string in-place
+	jal string_length # $v0 is length of string
+	beq $v0, 3, g3
+	beq $v0, 4, g4
+	beq $v0, 5, g5
+	beq $v0, 6, g6
+	beq $v0, 7, g7
+	j bad_guess
+	g3:
+	la $a0, Words3L
+	j after_g
+	g4:
+	la $a0, Words4L
+	j after_g
+	g5:
+	la $a0, Words5L
+	j after_g
+	g6:
+	la $a0, Words6L
+	j after_g
+	g7:
+	la $a0, Words7L
+	j after_g
+	after_g:
+	la $a1, if_guess_matches
+	jal list_find_if # $v0 is boolean for if match found
+	move $a0, $v0
+	jal play_sound
+	bnez $a0, good_guess
+
+	bad_guess:
+	li $v0, 4 # print string
+	la $a0, BadGuess
 	syscall
-	# ...work in progress...
+	j after_good_guess
+	after_bad_guess:
+
+	good_guess:
+	# ...work in progres...
+	after_good_guess:
+
 	jal show_letters
 	jal show_wordcounts
 	j user_choice
@@ -246,6 +290,39 @@ on_word: # callback procedure for parse_dictionary
 	li $v0, 4 # print string
 	la $a0, DictFind
 	syscall
+
+	jal restore_from_stack
+	lw $ra, ($sp)
+	subi $sp, $sp, -4
+	jr $ra
+
+if_guess_matches: # callback procesdure for list_find_if
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	jal save_to_stack
+
+	move $s0, $a0 # string address
+
+	la $s1, Guess
+
+	li $v0, 1 # assume it is a match at first
+
+	compare_loop:
+	lb $t0, ($s0)
+	lb $t1, ($s1)
+	addi $s0, $s0, 1 # ++$s0
+	addi $s1, $s1, 1 # ++$s1
+	seq $t2, $t0, $zero
+	seq $t3, $t1, $zero
+	xor $t4, $t2, $t3
+	beqz $t4, continue_compare # both not null or both null
+	move $v0, $zero # mismatching lengths (strange)
+	j after_compare_loop
+	continue_compare:
+	beqz $t0, after_compare_loop
+	beq $t0, $t1, compare_loop
+	move $v0, $zero # mismatching characters (normal)
+	after_compare_loop:
 
 	jal restore_from_stack
 	lw $ra, ($sp)

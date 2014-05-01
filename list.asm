@@ -47,7 +47,27 @@ list_find_if:
 	sw $ra, ($sp)
 	jal save_to_stack
 
-	# ... work in progress...
+	move $s0, $a0 # address of pointer to root node
+	move $s1, $a1 # callback accepting $a0 as user data from node
+
+	move $s2, $zero # eventual return value
+
+	move $s3, $s0 # address of pointer to node
+	lw $s4, ($s3) # pointer to node
+	find_loop:
+	beqz $s4, after_find_loop # if null, done searching
+	lw $a0, ($s4) # load user data
+	jalr $s1
+	beqz $v0, keep_finding # not found if return is 0
+	li $s2, 1 # found
+	j after_find_loop
+	keep_finding:
+	addi $s3, $s4, 4 # address of new pointer
+	lw $s4 ($s3) # pointer to node
+	j find_loop
+	after_find_loop:
+
+	move $v0, $s2 # return value = $s2
 
 	jal restore_from_stack
 	lw $ra, ($sp)
